@@ -17,35 +17,42 @@ $DC = Get-ADDomainController -Identity "ATHRD1VMS001"
 
 Write-Host "Checking $($CompanyDCs.Count) Domain Controllers for the domain." -ForegroundColor Green
 
-# Implement Begin, Process, End
-# Output Online DCs as variable
-# Output Online DCs to logfile
-# Output Offline DCs to logfile
-
 function Test-DC-Connection {
-ForEach ($DC in $CompanyDCs) {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [string]$DomainController
+    )
 
+    Begin {
 
+    } #BEGIN
 
-    try {
-        Test-Connection -ComputerName $DC -Count 2 -ErrorAction Stop | Out-Null
-        Write-Host "DC $DC is responding with IPv4 address $($DC.IPv4Address)." -ForegroundColor Green
-        $OnlineDCs = $OnlineDCs + $DC
+    Process {
+
+        # Get DC if it's a String
+        ForEach ($DC in $DomainController) {
         
-        
+        try {
+            $DC = Get-ADDomainController -Identity $DC -ErrorAction Stop
+            } catch {
+            Write-Host "Object named $DC not found. Check if the name of the Domain Controller is correct." -ForegroundColor Red
+            Write-Host "The script will exit." -ForegroundColor Red
+        } #try
+
+        [PSCustomObject]@{
+            DC = $DC
+            IPv4 = $DC.IPv4Address
+            Reachable = (Test-NetConnection -Computername $DC).PingSucceeded
+        }
     }
-    catch {
-        Write-Host "DC $DC is not responding and appears to be offline! Please verify." -ForegroundColor Red
-        $OfflineDCs = $OfflineDCs + $DC
-        Write-Output "The DC $DC did not respond to a PING request on $(Get-Date) from $env:ComputerName." | Out-File $Logfilepath\DCCheck-$((Get-Date).ToString('yyyy-MM-dd')).txt -Append
-    }
-}
+    } #PROCESS
 
-Write-Host "Out of $($CompanyDCs.Count) Domain Controllers, $($OnlineDCs.Count) responded." -ForegroundColor Green
-Write-Host "$($OfflineDCs.Count) Domain Controller did not respond!" -ForegroundColor Red
+    End {
 
+    } #END
 
-}
+} #Function
 
 # Implement Error Handling (PC is offline)
 # Error Handling (CIM Lookup did not work)
