@@ -18,6 +18,17 @@ if ($SMBv1State.State -eq "Enabled") {
     Write-Host "SMBv1 is Disabled!" -ForegroundColor green
 }
 
+# Enable Smb1Audit Logs verify
+Set-SmbServerConfiguration -AuditSmb1Access $true
+Write-Host "Audit Log for SMBv1 Access has been enabled!" -ForegroundColor Green
+$SMBv1Config = Get-SmbServerConfiguration
+If ($SMBv1Config.AuditSmb1Access) {
+    Write-Host "AuditSmb1Access is enabled." -ForegroundColor Red
+} else {
+    Write-Host "AuditSmb1Access is false." -ForegroundColor green
+}
+
+
 # Disable Smb1Audit Logs verify
 Set-SmbServerConfiguration -AuditSmb1Access $false
 Write-Host "Audit Log for SMBv1 Access has been disabled!" -ForegroundColor Green
