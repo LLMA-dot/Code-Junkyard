@@ -2,26 +2,36 @@
 
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory)]
-    [TypeName]
-    $ParameterName
+    [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValureFromPipelineByPropertyName=$true)]
+    [string[]]
+    $DomainController
 )
 
 
-$CompanyDCs = Get-ADDomainController -filter *
-$OnlineDCs = @()
-$OfflineDCs = @()
-$Logfilepath = "C:\Temp\"
+### Variables ###
 
-$DC = Get-ADDomainController -Identity "ATHRD1VMS001"
+$DomainController = "*"
 
-Write-Host "Checking $($CompanyDCs.Count) Domain Controllers for the domain." -ForegroundColor Green
 
+if ($DomainController -eq "*") {
+
+    $DomainController = Get-ADDomainController -filter *
+
+} else {
+
+    Get-ADDomainController -Identity $DomainController
+    
+}
+
+$DomainController
+
+### Functions
+# Function okay for now
 function Test-DC-Connection {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
-        [string]$DomainController
+        $DomainController
     )
 
     Begin {
@@ -62,28 +72,41 @@ function Test-DC-Connection {
 
 function Get-DC-LastReboot {
     
-  #  [CmdletBinding()]
-  #  param (
-  #      [Parameter()]
-  #      [string]
-  #      $ComputerName
-  #  )
+  [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        $DomainController
+    )
 
-    ForEach ($DC in $CompanyDcs) {
+    ForEach ($DC in $DomainController) {
     $DCBootUpTime = Get-CimInstance -ComputerName $DC.Name -ClassName Win32_OperatingSystem  -Property * | Select LastBootUpTime -ExpandProperty LastBootUpTime
 
-    Write-Host "DC $DC last Bootuptime was $DCBootUpTime." -ForegroundColor Green
+            [PSCustomObject]@{
+            DC = $DC
+            LastBootUpTime = $DCBootUpTime
+        }
     }
 }
-
+# Function Okay
 # Write to a logfile
 # Put out a warning for every DC who has not seen an update in 2 months
 
 
 function Get-DC-HotfixCompliance {
+   [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        $DomainController
+    )
 
-    ForEach ($DC in $CompanyDCs) {
+    ForEach ($DC in $DomainController) {
     
-        (Get-Hotfix -ComputerName $DC | Sort-Object InstalledOn)[-1]
+        ($DCHotfix = Get-Hotfix -ComputerName $DC | Sort-Object InstalledOn)[-1]
     }
-}
+
+            [PSCustomObject]@{
+            DC = $DC
+            LastHotfix = $DCHotfix
+            }
+    }
+
