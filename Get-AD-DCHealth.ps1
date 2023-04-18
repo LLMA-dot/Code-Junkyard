@@ -26,7 +26,7 @@ if ($DomainController -eq "*") {
 $DomainController
 
 ### Functions
-# Function okay for now
+### Function to Test DC Connection
 function Test-DC-Connection {
     [CmdletBinding()]
     param (
@@ -64,12 +64,7 @@ function Test-DC-Connection {
 
 } #Function
 
-# Implement Error Handling (PC is offline)
-# Error Handling (CIM Lookup did not work)
-# Output not reachable DCs to logfile.
-# Include Possibility to get single DC last reboot
-# Put out warning for every DC without a reboot in 2 months.
-
+# Function to get when a DC was last rebooted
 function Get-DC-LastReboot {
     
   [CmdletBinding()]
@@ -87,11 +82,8 @@ function Get-DC-LastReboot {
         }
     }
 }
-# Function Okay
-# Write to a logfile
-# Put out a warning for every DC who has not seen an update in 2 months
 
-
+# Get last installed Hotfix
 function Get-DC-HotfixCompliance {
    [CmdletBinding()]
     param (
@@ -110,3 +102,22 @@ function Get-DC-HotfixCompliance {
             }
     }
 
+function Get-DCLastReplication{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValuefromPipelineByPropertyName=$true)]
+        $DomainController
+    )
+
+    Foreach ($DC in $DomainController) {
+    
+        $DCReplicationData = Get-ADReplicationPartnerMetadata -Target $DC 
+        
+        [PSCustomObject]@{
+        Server = $DCReplicationData.Server
+        LastReplicationAttempt = $DCReplicationData.LastReplicationAttempt
+        LastReplicationSuccess = $DCReplicationData.LastReplicationSuccess
+        
+        }
+    }
+}
