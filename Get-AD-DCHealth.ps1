@@ -2,7 +2,7 @@
 
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValureFromPipelineByPropertyName=$true)]
+    [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
     [string[]]
     $DomainController
 )
