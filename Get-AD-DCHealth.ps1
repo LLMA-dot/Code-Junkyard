@@ -28,6 +28,27 @@ $DomainController
 ### Functions
 ### Function to Test DC Connection
 function Test-DC-Connection {
+<#
+.SYNOPSIS
+Retrieves specific information about one or more computers, using WMI or CIM.
+.DESCRIPTION
+This command uses either WMI or CIM to retrieve specific information about one or more computers. You must run this command as a user who has permission to remotely query CIM or WMI on the machines involved. You can specifiy a starting protocol (CIM by default), and specify that, in the event of a failure, the other protocol be used on a per-machine basis.
+.PARAMETER ComputerName
+One or more computer names. When using WMI, this can also be IP addresses. IP addresses may not work for CIM.
+.PARAMETER LogFailuresToPath
+A path and filename to Write rfailed computer names to. If omitted, no log will be written. 
+.PARAMETER Protocol
+Valid values: Wsman (uses CIM) or Dcom (uses WMI). Will be used for all machines. "Wsman" is the default.
+.PARAMETER ProtocolFallback
+Specify this to automatically try the other protocol if a machine fails.
+.EXAMPLE 
+Get-MachineInfo -ComputerName ONE,TWO,THREE
+This example will query the three machines.
+.EXAMPLE
+Get-AD-Computer -filter * | Select-Expand Name | Get-MachineInfo
+This example will attempt to query all machines in AD.
+#>
+
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
@@ -66,6 +87,27 @@ function Test-DC-Connection {
 
 # Function to get when a DC was last rebooted
 function Get-DC-LastReboot {
+<#
+.SYNOPSIS
+Retrieves specific information about one or more computers, using WMI or CIM.
+.DESCRIPTION
+This command uses either WMI or CIM to retrieve specific information about one or more computers. You must run this command as a user who has permission to remotely query CIM or WMI on the machines involved. You can specifiy a starting protocol (CIM by default), and specify that, in the event of a failure, the other protocol be used on a per-machine basis.
+.PARAMETER ComputerName
+One or more computer names. When using WMI, this can also be IP addresses. IP addresses may not work for CIM.
+.PARAMETER LogFailuresToPath
+A path and filename to Write rfailed computer names to. If omitted, no log will be written. 
+.PARAMETER Protocol
+Valid values: Wsman (uses CIM) or Dcom (uses WMI). Will be used for all machines. "Wsman" is the default.
+.PARAMETER ProtocolFallback
+Specify this to automatically try the other protocol if a machine fails.
+.EXAMPLE 
+Get-MachineInfo -ComputerName ONE,TWO,THREE
+This example will query the three machines.
+.EXAMPLE
+Get-AD-Computer -filter * | Select-Expand Name | Get-MachineInfo
+This example will attempt to query all machines in AD.
+#>
+
     
   [CmdletBinding()]
     param (
@@ -78,13 +120,34 @@ function Get-DC-LastReboot {
 
             [PSCustomObject]@{
             DC = $DC
-            LastBootUpTime = $DCBootUpTime
+            LastBootUpTime = Get-Date $DCBootUpTime -Format "yyyy/M/d HH:mm"
         }
     }
 }
 
 # Get last installed Hotfix
 function Get-DC-HotfixCompliance {
+<#
+.SYNOPSIS
+Retrieves specific information about one or more computers, using WMI or CIM.
+.DESCRIPTION
+This command uses either WMI or CIM to retrieve specific information about one or more computers. You must run this command as a user who has permission to remotely query CIM or WMI on the machines involved. You can specifiy a starting protocol (CIM by default), and specify that, in the event of a failure, the other protocol be used on a per-machine basis.
+.PARAMETER ComputerName
+One or more computer names. When using WMI, this can also be IP addresses. IP addresses may not work for CIM.
+.PARAMETER LogFailuresToPath
+A path and filename to Write rfailed computer names to. If omitted, no log will be written. 
+.PARAMETER Protocol
+Valid values: Wsman (uses CIM) or Dcom (uses WMI). Will be used for all machines. "Wsman" is the default.
+.PARAMETER ProtocolFallback
+Specify this to automatically try the other protocol if a machine fails.
+.EXAMPLE 
+Get-MachineInfo -ComputerName ONE,TWO,THREE
+This example will query the three machines.
+.EXAMPLE
+Get-AD-Computer -filter * | Select-Expand Name | Get-MachineInfo
+This example will attempt to query all machines in AD.
+#>
+
    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
@@ -103,6 +166,27 @@ function Get-DC-HotfixCompliance {
     }
 
 function Get-DCLastReplication{
+<#
+.SYNOPSIS
+Retrieves specific information about one or more computers, using WMI or CIM.
+.DESCRIPTION
+This command uses either WMI or CIM to retrieve specific information about one or more computers. You must run this command as a user who has permission to remotely query CIM or WMI on the machines involved. You can specifiy a starting protocol (CIM by default), and specify that, in the event of a failure, the other protocol be used on a per-machine basis.
+.PARAMETER ComputerName
+One or more computer names. When using WMI, this can also be IP addresses. IP addresses may not work for CIM.
+.PARAMETER LogFailuresToPath
+A path and filename to Write rfailed computer names to. If omitted, no log will be written. 
+.PARAMETER Protocol
+Valid values: Wsman (uses CIM) or Dcom (uses WMI). Will be used for all machines. "Wsman" is the default.
+.PARAMETER ProtocolFallback
+Specify this to automatically try the other protocol if a machine fails.
+.EXAMPLE 
+Get-MachineInfo -ComputerName ONE,TWO,THREE
+This example will query the three machines.
+.EXAMPLE
+Get-AD-Computer -filter * | Select-Expand Name | Get-MachineInfo
+This example will attempt to query all machines in AD.
+#>
+
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValuefromPipelineByPropertyName=$true)]
@@ -115,8 +199,8 @@ function Get-DCLastReplication{
         
         [PSCustomObject]@{
         Server = $DCReplicationData.Server
-        LastReplicationAttempt = $DCReplicationData.LastReplicationAttempt
-        LastReplicationSuccess = $DCReplicationData.LastReplicationSuccess
+        LastReplicationAttempt = Get-Date $DCReplicationData.LastReplicationAttempt -Format "yyyy/M/d HH:mm"
+        LastReplicationSuccess = Get-Date $DCReplicationData.LastReplicationSuccess -Format "yyyy/M/d HH:mm"
         
         }
     }
