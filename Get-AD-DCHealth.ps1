@@ -2,7 +2,7 @@
 
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [string[]]
     $DomainController
 )
@@ -17,7 +17,8 @@ if ($DomainController -eq "*") {
 
     $DomainController = Get-ADDomainController -filter *
 
-} else {
+}
+else {
 
     Get-ADDomainController -Identity $DomainController
     
@@ -28,7 +29,7 @@ $DomainController
 ### Functions
 ### Function to Test DC Connection
 function Test-DC-Connection {
-<#
+    <#
 .SYNOPSIS
 Retrieves specific information about one or more computers, using WMI or CIM.
 .DESCRIPTION
@@ -51,7 +52,7 @@ This example will attempt to query all machines in AD.
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         $DomainController
     )
 
@@ -64,19 +65,20 @@ This example will attempt to query all machines in AD.
         # Get DC if it's a String
         ForEach ($DC in $DomainController) {
         
-        try {
-            $DC = Get-ADDomainController -Identity $DC -ErrorAction Stop
-            } catch {
-            Write-Host "Object named $DC not found. Check if the name of the Domain Controller is correct." -ForegroundColor Red
-            Write-Host "The script will exit." -ForegroundColor Red
-        } #try
+            try {
+                $DC = Get-ADDomainController -Identity $DC -ErrorAction Stop
+            }
+            catch {
+                Write-Host "Object named $DC not found. Check if the name of the Domain Controller is correct." -ForegroundColor Red
+                Write-Host "The script will exit." -ForegroundColor Red
+            } #try
 
-        [PSCustomObject]@{
-            DC = $DC
-            IPv4 = $DC.IPv4Address
-            Reachable = (Test-NetConnection -Computername $DC).PingSucceeded
+            [PSCustomObject]@{
+                DC        = $DC
+                IPv4      = $DC.IPv4Address
+                Reachable = (Test-NetConnection -Computername $DC).PingSucceeded
+            }
         }
-    }
     } #PROCESS
 
     End {
@@ -87,7 +89,7 @@ This example will attempt to query all machines in AD.
 
 # Function to get when a DC was last rebooted
 function Get-DC-LastReboot {
-<#
+    <#
 .SYNOPSIS
 Retrieves specific information about one or more computers, using WMI or CIM.
 .DESCRIPTION
@@ -109,25 +111,38 @@ This example will attempt to query all machines in AD.
 #>
 
     
-  [CmdletBinding()]
+    [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         $DomainController
     )
 
     ForEach ($DC in $DomainController) {
-    $DCBootUpTime = Get-CimInstance -ComputerName $DC.Name -ClassName Win32_OperatingSystem  -Property * | Select LastBootUpTime -ExpandProperty LastBootUpTime
+
+        try {
+        
+            $DCBootUpTime = Get-CimInstance -ComputerName $DC.Name -ClassName Win32_OperatingSystem  -Property * -ErrorAction Stop | Select LastBootUpTime -ExpandProperty LastBootUpTime 
 
             [PSCustomObject]@{
-            DC = $DC
-            LastBootUpTime = Get-Date $DCBootUpTime -Format "yyyy/M/d HH:mm"
+                DC               = $DC
+                LastBootUpTime   = Get-Date $DCBootUpTime -Format "yyyy/M/d"
+                RebootCompliance = TBD
+            
+            } 
         }
-    }
+        catch {
+        
+            Write-Host "Domain Controller $DC is not reachable by WinRM. Check for an issue manually!" -ForegroundColor Red
+        
+        } # try/catch
+            
+    } # Foreach
+        
 }
 
 # Get last installed Hotfix
 function Get-DC-HotfixCompliance {
-<#
+    <#
 .SYNOPSIS
 Retrieves specific information about one or more computers, using WMI or CIM.
 .DESCRIPTION
@@ -148,9 +163,9 @@ Get-AD-Computer -filter * | Select-Expand Name | Get-MachineInfo
 This example will attempt to query all machines in AD.
 #>
 
-   [CmdletBinding()]
+    [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         $DomainController
     )
 
@@ -159,14 +174,14 @@ This example will attempt to query all machines in AD.
         ($DCHotfix = Get-Hotfix -ComputerName $DC | Sort-Object InstalledOn)[-1]
     }
 
-            [PSCustomObject]@{
-            DC = $DC
-            LastHotfix = $DCHotfix
-            }
+    [PSCustomObject]@{
+        DC         = $DC
+        LastHotfix = $DCHotfix
     }
+}
 
-function Get-DCLastReplication{
-<#
+function Get-DCLastReplication {
+    <#
 .SYNOPSIS
 Retrieves specific information about one or more computers, using WMI or CIM.
 .DESCRIPTION
@@ -189,7 +204,7 @@ This example will attempt to query all machines in AD.
 
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValuefromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValuefromPipelineByPropertyName = $true)]
         $DomainController
     )
 
@@ -198,10 +213,19 @@ This example will attempt to query all machines in AD.
         $DCReplicationData = Get-ADReplicationPartnerMetadata -Target $DC 
         
         [PSCustomObject]@{
-        Server = $DCReplicationData.Server
-        LastReplicationAttempt = Get-Date $DCReplicationData.LastReplicationAttempt -Format "yyyy/M/d HH:mm"
-        LastReplicationSuccess = Get-Date $DCReplicationData.LastReplicationSuccess -Format "yyyy/M/d HH:mm"
+            Server                 = $DCReplicationData.Server
+            LastReplicationAttempt = Get-Date $DCReplicationData.LastReplicationAttempt -Format "yyyy/M/d HH:mm"
+            LastReplicationSuccess = Get-Date $DCReplicationData.LastReplicationSuccess -Format "yyyy/M/d HH:mm"
         
         }
     }
+}
+
+
+### Compliance Status Testing
+If ($DCBootUpTime -lt $DCBootUpTime.AddDays(-60)) {
+    Write-Host "lol"
+}
+else {
+    
 }
