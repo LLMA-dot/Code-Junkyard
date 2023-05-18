@@ -117,25 +117,49 @@ This example will attempt to query all machines in AD.
         $DomainController
     )
 
+    Write-Verbose "Starting to iterate Domain Controllers."
+
     ForEach ($DC in $DomainController) {
 
         try {
-        
-            $DCBootUpTime = Get-CimInstance -ComputerName $DC.Name -ClassName Win32_OperatingSystem  -Property * -ErrorAction Stop | Select LastBootUpTime -ExpandProperty LastBootUpTime 
-
-            [PSCustomObject]@{
-                DC               = $DC
-                LastBootUpTime   = Get-Date $DCBootUpTime -Format "yyyy/M/d"
-                RebootCompliance = TBD
             
+            Write-Verbose "Sending WinRM Request to $DC to Get-Ciminstance."    
+            $DCBootUpTime = Get-CimInstance -ComputerName $DC.Name -ClassName Win32_OperatingSystem  -Property * -ErrorAction Stop | Select LastBootUpTime -ExpandProperty LastBootUpTime       
+            Write-Verbose 'Parameter $DCBootUpTime written from DC.'
+            
+            Write-Verbose 'Evaluating $DCBootUpTime parameter for compliance.'
+            If ($DCBootUpTime -gt ($DCBootUpTime.AddDays(-60))) {
+                Write-Verbose "$DC has been rebooted in the last two months - evaluating compliance to TRUE"
+                $DCBootUpTimeCompliance = $True
+            } 
+            else {
+                Write-Verbose "$DC has not been rebooted in the last two months - evaluating compliance to FALSE"
+                $DCBootUpTimeCompliance = $false
+            }
+
+            Write-Verbose "Generating PSCustomObject for the Output."
+            [PSCustomObject]@{
+                DC             = $DC
+                LastBootUpTime = Get-Date $DCBootUpTime -Format "yyyy/M/d"
+                Compliant      = $DCBootUpTimeCompliance
             } 
         }
         catch {
-        
-            Write-Host "Domain Controller $DC is not reachable by WinRM. Check for an issue manually!" -ForegroundColor Red
-        
-        } # try/catch
+            Write-Verbose "Domain Controller $DC not reachable by WinRM. Compliance check failed automatically."
+            Write-Verbose "Generating PSCustomObject for the Output."
             
+            [PSCustomObject]@{
+                DC             = $DC
+                LastBootUpTime = "Unavailable"
+                Compliant      = "False"
+            } 
+            
+        
+            Write-Verbose "Ending Try/Catch"
+        } # try/catch
+          
+        Write-Verbose "Getting next DC if there is one in the queue. If not, exit the ForEach Queue."
+              
     } # Foreach
         
 }
@@ -229,3 +253,4 @@ If ($DCBootUpTime -lt $DCBootUpTime.AddDays(-60)) {
 else {
     
 }
+
